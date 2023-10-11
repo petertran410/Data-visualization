@@ -1,0 +1,22 @@
+#name {
+    color: blue;
+
+}
+
+#id {
+    font-weight: bold;
+}
+
+#courseTitle {
+    font-weight: bold;
+}
+
+#labTitle {
+    font-style: italic;
+}
+
+line {
+
+    stroke: blue;
+    stroke-width: 5
+}
