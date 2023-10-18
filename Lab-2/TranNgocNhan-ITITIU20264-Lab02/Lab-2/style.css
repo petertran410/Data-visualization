@@ -1,0 +1,63 @@
+* {
+    margin: 2px;
+    box-sizing: border-box;
+    background-color: rgb(235, 240, 246);
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+html {
+    font-size: 100%;
+}
+
+.inf_name {
+    color: blue;
+}
+
+.inf_id {
+    font-weight: 800;
+}
+
+.course_name {
+    font-weight: 800;
+}
+
+.course_lesson {
+    font-style: italic;
+    font-weight: normal;
+}
+
+.svg {
+    margin: 1rem 0 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+svg {
+    background-color: rgb(210, 214, 215);
+    outline: auto;
+}
+
+.histogram {
+    display: flex;
+    margin: 1rem;
+    flex-direction: column;
+    align-items: center;
+}
+
+.histogram #histogram {
+    margin: 1rem;
+    background-color: initial;
+    outline: none;
+}
+.chart {
+    display: flex;
+    justify-content: center;
+}
+.chart #bar_chart {
+    outline: none;
+    background-color: initial;
+}
+.histogram #histogram_2 {
+    outline: none;
+    background-color: initial;
+    margin: 2rem;
+}
