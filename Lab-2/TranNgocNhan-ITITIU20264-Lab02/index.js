@@ -8,7 +8,7 @@ function addEltToSVG(svg, name, attrs) {
 }
 
 function createHistogram(svgElement, str) {
-    svgElement.innerHTML = '';
+    svgElement.innerHTML = '.';
 
     const bins = [
         { label: 'A-D', count: 0 },
@@ -67,7 +67,7 @@ function createHistogram(svgElement, str) {
 }
 
 function createBarChart(svgElement,dataset) {
-    svgElement.innerHTML = ".";
+    svgElement.innerHTML = '.';
 
     function getColor(d) {
         const blueValue = 0 + (d * 5);
