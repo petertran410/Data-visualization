@@ -1,0 +1,13 @@
+h3 {
+  color: Blue;
+  font-weight: bold;
+}
+
+h4 {
+  font-weight: bold;
+  font-style: italic;
+}
+
+p {
+  font-style: italic;
+}
