@@ -49,7 +49,7 @@ function your_draw_chart_function(data) {
     .append("circle")
     .attr("cx", (d) => xScale(d.population))
     .attr("cy", (d) => yScale(d.grdp))
-    .attr("r", (d) => Math.sqrt(d.area / (Math.PI * 30))) // Scale the area down 30 times
+    .attr("r", (d) => Math.sqrt(d.area / (Math.PI * 30)))
     .attr(
       "fill",
       (d) => "rgb(40, 100, " + Math.round((d.density / 15) * 10) + ")"
