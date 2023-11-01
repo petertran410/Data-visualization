@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lab 5 - D3.js - Interaction</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <style>
+      #Student_name {
+        font-size: 20px;
+        font-weight: bold;
+        color: black;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Info -->
+    <h3 id="Student_name">Nguyễn Hoàng Thiên Phúc</h3>
+    <h4 id="student-id">ITITIU20279</h4>
+    <h4 class="course-title">Data science and data visualization</h4>
+    <p>
+      This is all my own work. I did not copy the code from any other source
+    </p>
+    <!-- End Info -->
+
+    <div id="info"></div>
+    <div id="scatterplot-for-covid-data">
+      <script>
+        let width = 1300;
+        let height = 1300;
+        let spacing = 100;
+
+        let info = d3.select("#info")
+            .style("position", "absolute") // Positioning
+            .style("background", "white")
+            .style("padding", "10px") // Modify the padding
+            .style("border", "2px solid black") // Modify the border
+            .style("display", "none")
+
+            let svg = d3.select("body").append("svg")
+              .attr("width", width)
+              .attr("height", height)
+              .append("g")
+            .attr("transform", `translate(${spacing / 2}, ${spacing / 2})`);
+
+
+
+        d3.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+            .then(function (data) {
+                let date = '5/4/20'; // Modify the date
+                let dataByDate = data.map(function (d) {
+                    return {
+                        country: d['Country/Region'],
+                        lat: parseFloat(d['Lat']),
+                        long: parseFloat(d['Long']),
+                        date: date,
+                        confirmed: parseInt(d[date])
+                    }
+                });
+                draw(dataByDate);
+            });
+        // Draw scatterplot with date
+        function draw(data) {
+            let minLat = d3.min(data, function (d) {
+                return d.lat
+            });
+            let maxLat = d3.max(data, function (d) {
+                return d.lat
+            });
+            // Modify the minLong
+            let minLong = d3.min(data, function (d) {
+                return d.long
+            });
+            // Modify the maxLong
+            let maxLong = d3.max(data, function (d) {
+                return d.long
+            });
+
+            console.log(minLat, maxLat, minLong, maxLong);
+
+            minLat = Math.floor(minLat);
+            maxLat = Math.ceil(maxLat);
+            minLong = Math.floor(minLong);
+            maxLong = Math.ceil(maxLong);
+
+            console.log(minLat, maxLat, minLong, maxLong);
+
+            let xScale = d3.scaleLinear()
+                .domain([minLat, maxLat])
+                .range([0, width - spacing]);
+            let yScale = d3.scaleLinear()
+                .domain([minLong, maxLong])
+                .range([height - spacing, 0]);
+
+            var xAxis = d3.axisBottom(xScale);
+            var yAxis = d3.axisLeft(yScale);
+
+            svg.append("g")
+                .attr('class', 'grid')
+                .attr("transform", `translate(0, ${height - spacing / 2})`)
+                .call(d3.axisBottom(xScale)
+                    .tickSize(-height + spacing / 2)
+                    .tickFormat("")
+                    .tickSizeOuter(0)
+                    .tickSizeInner(-height + spacing / 2)
+                    .tickPadding(10)
+                    .tickFormat("")
+                );
+
+            svg.append("g")
+                .attr('class', 'grid')
+                .attr("transform", `translate(${spacing / 2}, 0)`)
+                .call(d3.axisLeft(yScale)
+                    .tickSize(-width + spacing / 2)
+                    .tickFormat("")
+                    .tickSizeOuter(0)
+                    .tickSizeInner(-width + spacing / 2)
+                    .tickPadding(10)
+                    .tickFormat("")
+                );
+
+            svg.append("g")
+                .attr("id", "xAxis")
+                .attr("transform", `translate(0, ${(height - spacing) / 2})`)
+                .call(xAxis)
+                .selectAll("text")
+                .style("font-size", "14px")
+                .style("font-weight", "bold")
+                .filter(function (d) {
+                    return d === 0;
+                })
+                .attr("transform", "translate(-10,0)")
+                .style("text-anchor", "end");
+
+            svg.append("g")
+                .attr("id", "yAxis")
+                .attr("transform", `translate(${(width - spacing) / 2}, 0)`)
+                .call(yAxis)
+                .selectAll("text")
+                .style("font-size", "14px")
+                .style("font-weight", "bold")
+                .attr("transform", "translate(0,-3)")
+                .filter(function (d) {
+                    return d === 0;
+                })
+                .remove();
+
+            // Add circles representing the confirmed cases
+            svg.selectAll("circle")
+                .data(data)
+                .enter()
+                .append("circle")
+                .attr("cx", function (d) {
+                    return xScale(d.lat);
+                })
+                .attr("cy", function (d) {
+                    return yScale(d.long);
+                })
+                .attr("r", 10) // Circle size
+                .style("fill", "blue") // Color of circles
+                .style("opacity", 0.7) // Opacity
+                .on("mouseover", function (d) {
+                    info.style("display", "block");
+                    info.html(`Country: ${d.country}<br>Confirmed Cases: ${d.confirmed}<br>Latitude: ${d.lat}<br>Longitude: ${d.long}`)
+                        .style("left", (d3.event.pageX + 10) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+                })
+                .on("mouseout", function () {
+                    info.style("display", "none");
+                });
+        }
+      </script>
+    </div>
+  </body>
+</html>
