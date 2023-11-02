@@ -1,0 +1,10 @@
+.hightligh {
+  fill: blue;
+}
+
+.textColor {
+  fill: orange;
+  font-weight: bolder;
+  font-size: 15px;
+  text-align: center;
+}
