@@ -1,7 +1,7 @@
 var dataset = [];
 var numOfBars = 20;
-var height = 500;
-var width = 700;
+var height = 700;
+var width = 1000;
 
 function rowConverter(data) {
   return {
