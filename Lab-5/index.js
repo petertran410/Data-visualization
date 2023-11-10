@@ -26,7 +26,7 @@ d3.csv(
     return {
       country: d["Country/Region"],
       lat: parseFloat(d["Lat"]),
-      long: parseFloat( d["Long"]),
+      long: parseFloat(d["Long"]),
       date: date,
       confirmed: parseInt(d[date]),
     };
@@ -70,20 +70,20 @@ function draw(data) {
   var yAxis = d3.axisLeft(yScale);
 
   // 1
-    svg
-      .append("g")
-      .attr("class", "grid")
-      .attr("transform", `translate(0, ${height - spacing / 2})`)
-      .call(
-        d3
-          .axisBottom(xScale)
-          .tickSize(-height + spacing / 2)
-          .tickFormat("")
-          .tickSizeOuter(0)
-          .tickSizeInner(-height + spacing / 2)
-          .tickPadding(10)
-          .tickFormat("")
-      );
+  svg
+    .append("g")
+    .attr("class", "grid")
+    .attr("transform", `translate(0, ${height - spacing / 2})`)
+    .call(
+      d3
+        .axisBottom(xScale)
+        .tickSize(-height + spacing / 2)
+        .tickFormat("")
+        .tickSizeOuter(0)
+        .tickSizeInner(-height + spacing / 2)
+        .tickPadding(10)
+        .tickFormat("")
+    );
 
   // 2
   svg
