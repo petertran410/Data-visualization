@@ -1,0 +1,724 @@
+// Step 1: Define basic constraints
+const w = 500;
+const h = 500;
+const p = 100;
+
+// Step 2A: Generate random data (range min < X < max)
+let dataset = [];
+
+for (let index = 0; index < max; index++) {
+  let newNumber = Math.floor(Math.random() * (max - min) + min);
+  dataset.push(newNumber);
+}
+
+// Step 2B: Define row converter for CSV
+let rowConverter = function (d) {
+  let parseTime = d3.timeParse("%m/%d/%y");
+  return {
+    attr1: d["attr1"],
+    attr2: parseInt(d["attr2"]),
+    attr3: parseFloat(d["attr3"]),
+    attr4: parseFloat(d["attr4"]).replace(",", "."),
+    attr5: parseTime(d["attr5"]),
+  };
+};
+
+// Step 2C: Remove Vietnamese accent function
+function stringToSlug(str) {
+  let from, to;
+  from =
+    "àáãảạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệđùúủũụưừứửữựòóỏõọôồốổỗộơờớởỡợìíỉĩịäëïîöüûñçýỳỹỵỷ";
+  to =
+    "aaaaaaaaaaaaaaaaaeeeeeeeeeeeduuuuuuuuuuuoooooooooooooooooiiiiiaeiiouuncyyyyy";
+  for (let i = 0, l = from.length; i < l; i++) {
+    str = str.replace(RegExp(from[i], "gi"), to[i]);
+  }
+  return str.replace(/(^\w|\s\w)/g, (m) => m.toUpperCase());
+}
+
+// Step 3: Driver code
+function task() {
+  d3.csv("link", rowConverter, function (error, data) {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log(data);
+
+      // 3.1A Filter value
+      data = data.filter((d) => !isNaN(d.lat) && !isNaN(d.long) && d.total > 0);
+
+      // 3.1B Create new T/F attribute for color-grouping:
+      // newCol = comparison expression ? true : false;
+      data.forEach(function (d) {
+        d["attr5"] = d["attr4"];
+      });
+
+      // 3.1C Select only the first i rows
+      let currentData = data.slice(0, i - 1);
+
+      // 3.1D Group data by nesting
+      // sortValues is OPTIONAL
+      let dataGroup = d3
+        .nest()
+        .key((d) => d["Grouping"])
+        .sortValues((a, b) => b.value - a.value)
+        .entries(data);
+
+      // 3.1E Get a column of data in specific group
+      // index can be the key to access
+      // length to get the size
+      d3.data(dataGroup.map((item) => item.values)[index]);
+      d3.data(dataGroup[key].values);
+
+      // 3.2A Draw a map
+      d3.json(
+        "https://raw.githubusercontent.com/itzmealvin/DATA_Hosting/main/Data%20Science%20%26%20Data%20Visualization/vn-provinces.json",
+        function (json) {
+          // 3.2A.1 Define initial path generator
+          let scale = 170;
+          let path = d3.geoPath().projection(
+            d3
+              .geoMercator()
+              .scale([scale])
+              .center(d3.geoCentroid(json))
+              .translate([w / 2, h / 2])
+          );
+
+          // 3.2A.2 Define centered projection
+          let bounds = path.bounds(json);
+          let hScale = (scale * (w - p)) / (bounds[1][0] - bounds[0][0]);
+          let vScale = (scale * (h - p)) / (bounds[1][1] - bounds[0][1]);
+          scale = hScale < vScale ? hScale : vScale;
+          let offset = [
+            width - (bounds[0][0] + bounds[1][0]) / 1.5,
+            height - (bounds[0][1] + bounds[1][1]) / 1.8,
+          ];
+          let projection = d3
+            .geoMercator()
+            .center(d3.geoCentroid(json))
+            .translate(offset)
+            .scale(scale);
+
+          // 3.2A.3 Update path generator
+          path = d3.geoPath().projection(projection);
+
+          // 3.2A.4 Add svg element
+          // 3.2A.5 Add map container
+          var map = svg.append("g").attr("id", "map");
+
+          // 3.2A.6 Define zooming functions
+          let zoomed = function () {
+            const { transform } = d3.event;
+            map
+              .attr("transform", transform)
+              .attr("stroke-width", 1 / transform.k);
+          };
+
+          // 3.2A.7 Define clicked function
+          function clicked(d) {
+            let [[x0, y0], [x1, y1]] = path.bounds(d);
+            province.transition().style("fill", "#ffffcc");
+            d3.select(this).transition().style("fill", "#800026");
+            svg1
+              .transition()
+              .duration(750)
+              .call(
+                zoom.transform,
+                d3.zoomIdentity
+                  .translate(w / 2, h / 2)
+                  .scale(1)
+                  .scale(
+                    Math.min(8, 0.9 / Math.max((x1 - x0) / w, (y1 - y0) / h))
+                  )
+                  .translate(-(x0 + x1) / 2, -(y0 + y1) / 2)
+              );
+            d3.event.stopPropagation();
+          }
+
+          // 3.2A.8 Add zoom features
+          let zoom = d3.zoom().scaleExtent([1, 8]).on("zoom", zoomed);
+          map.call(zoom);
+
+          // 3.2A.9 Incorporate population data into JSON
+          for (const element of data) {
+            let dataProvince = element.province;
+            let dataPopulation = element.population;
+            for (const element of json.features) {
+              let jsonProvince = element.properties.Name;
+              if (dataProvince == jsonProvince) {
+                element.properties.Population = dataPopulation;
+                break;
+              }
+            }
+          }
+
+          // 3.2A.10 Bind data and create one path per GeoJSON feature
+          let province = map
+            .selectAll("path")
+            .data(json.features)
+            .enter()
+            .append("path")
+            .attr("d", path)
+            .style("stroke", "brown")
+            .style("fill", function (d) {
+              let population = d.properties.Population;
+              if (population) {
+                return colorScale(population);
+              } else {
+                return "#CCC";
+              }
+            })
+            .attr("cursor", "pointer")
+            .on("click", clicked);
+
+          // 3.2A.11 Define reset button
+          d3.select("#reset").on("click", function () {
+            province.style("fill", function (d) {
+              let population = d.properties.Population;
+              if (population) {
+                return colorScale(population);
+              } else {
+                return "#ccc";
+              }
+            });
+            svg1
+              .transition()
+              .duration(750)
+              .call(
+                zoom.transform,
+                d3.zoomIdentity,
+                d3.zoomTransform(svg1.node()).invert([width / 2, height / 2])
+              );
+            d3.event.stopPropagation();
+          });
+        }
+      );
+
+      // 3.2B.1 Add main svg element
+      let svg = d3
+        .select(".task")
+        .append("svg")
+        .attr("width", w)
+        .attr("height", h);
+
+      // 3.2B.2A Create xyr-scale for linearity value
+
+      // d3.min/max(currentData, function (d) {
+      //       return d["attr1"];
+      //     })
+      // xScale .range([padding, w - padding])
+      // yScale .range([h - padding, height])
+      // rScale .range(2,5)
+      // opacity .range([0.1,1])
+      let lScale = d3
+        .scaleLinear()
+        .domain([
+          0,
+          d3.max(currentData, function (d) {
+            return d["attr1"];
+          }),
+        ])
+        .range([p, w - p * 1.6]);
+
+      // 3.2B.2B Create scale for orderly value
+      // xScale .rangeRound([0, w - p])
+      let oScale = d3
+        .scaleBand()
+        .domain(d3.range(currentData.length))
+        .rangeRound([0, h - p])
+        .paddingInner(0.2);
+
+      // 3.2B.2C Create a color scale
+      // categorical d3.scaleOrdinal(d3.schemeAccent);
+      // sequential n color d3.scaleOrdinal(d3.schemeBlues[n]);
+      // diverging d3.scaleSequential(d3.interpolatePiYG);
+      let cScale = d3.scaleOrdinal(d3.schemeAccent);
+      //  quantize
+      let qScale = d3
+        .scaleQuantile()
+        .domain(data.map((item) => item.population))
+        .range(["#ffefa5", "#febf5b", "#fd9d43", "#fc7034", "#f23d26"]);
+
+      // 3.2B.2D Define line function
+      let line = d3
+        .line()
+        .x(function (d) {
+          return lScale(+d.year);
+        })
+        .y(function (d) {
+          return lScale(+d.rate);
+        });
+
+      // 3.2B.3A Add the rectangle elements
+      // vertical bar chart: x: xScaleOrdinal(i), y: yScale, width: xScale.bandwidth()
+      // horizontal bar chart: x: padding, y: yScaleOrdinal(i), height: yScale.bandwidth()
+      let bars = svg.selectAll("rect").data(currentData).enter().append("rect");
+
+      bars
+        .attr("x", p)
+        .attr("y", function (d, i) {
+          return yScale(i);
+        })
+        .attr("width", function (d) {
+          return xScale(d["attr1"]);
+        })
+        .attr("height", yScale.bandwidth())
+        .attr("fill", function (d) {
+          return "rgb(0, " + d["attr1"] + ",0)";
+        });
+
+      // 3.2B.3B Add the circle elements
+      // if use brushing, group by adding .append("g") after svg
+      let circles = svg
+        .selectAll("circle")
+        .data(currentData)
+        .enter()
+        .append("circle");
+      // events can be: click, mouseover, mouseout
+      // xPos, yPos get the current position of mouseover element
+      // define tooltip here
+      circles
+        .attr("cx", function (d) {
+          return xScale(d["attr1"]);
+        })
+        .attr("cy", function (d) {
+          return yScale(d["attr2"]);
+        })
+        .attr("r", function (d) {
+          return rScale(d["attr3"]);
+        })
+        .attr("fill", function (d) {
+          return d["attr4"] ? "green" : "red";
+        })
+        .attr("stroke", "orange")
+        .attr("stroke-width", function (d) {
+          return d / 2;
+        })
+        .attr("fill-opacity", function (d) {
+          return opacScale(d.total);
+        })
+        .on("mouseover", function (d) {
+          let xPosition = parseFloat(d3.select(this).attr("x"));
+          let yPosition = parseFloat(d3.select(this).attr("y"));
+
+          d3.select("#tooltip")
+            .style("left", xPosition + "px")
+            .style("top", yPosition + "px")
+            .append("p", d["attr1"])
+            .attr("id", "area")
+            .text(d["attr1"]);
+          d3.select("#tooltip")
+            .append("p", d["attr2"])
+            .attr("id", "value")
+            .text(d["attr2"]);
+
+          d3.select("#tooltip").classed("hidden", false);
+        })
+        .on("mouseout", function () {
+          d3.select("#tooltip").classed("hidden", true);
+        });
+
+      // 3.2B.3C Draw line chart
+      let lineChart = svg
+        .datum(dataGroup[key].values)
+        .append("path")
+        .attr("d", line)
+        .attr("stroke", "#0013de")
+        .style("stroke-width", 4)
+        .style("fill", "none")
+        .attr("class", "sexes-line")
+        .attr("id", "Male");
+
+      // 3.2B.4A.1 Brushing method
+      svg.call(
+        d3
+          .brush()
+          .extent([
+            [p, p],
+            [w - p, h - p],
+          ])
+          .on("start brush", updateChart)
+      );
+
+      // 3.2B.4A.2 Update chart function
+      function updateChart() {
+        extent = d3.event.selection;
+        circle.classed("selected", function (d) {
+          return isBrushed(extent, xScale(d["attr1"]), yScale(d["attr2"]));
+        });
+      }
+
+      // 3.2B.4A.3 isBrushed function
+      function isBrushed(brush_coords, cx, cy) {
+        let x0 = brush_coords[0][0],
+          x1 = brush_coords[1][0],
+          y0 = brush_coords[0][1],
+          y1 = brush_coords[1][1];
+        return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
+      }
+
+      // 3.2B.4B.1 Append rectangle to get user mouse position
+      svg
+        .append("rect")
+        .style("fill", "none")
+        .style("pointer-events", "all")
+        .attr("width", width)
+        .attr("height", height - padding)
+        .on("mousemove", mousemove)
+        .on("mouseout", mouseout);
+
+      // 3.2B.4B.2 Pre-append focus circle and text
+      svg1
+        .append("g")
+        .selectAll(".foucus-circle")
+        .data(groupedData[1].values)
+        .enter()
+        .append("circle")
+        .attr("class", "focus-circle");
+      svg1
+        .append("g")
+        .selectAll(".focus-text")
+        .data(groupedData[1].values)
+        .enter()
+        .append("text")
+        .attr("class", "focus-text")
+        .attr("text-anchor", "middle");
+
+      // 3.2B.4B.3 Get nearest x-position
+      let bisect = d3.bisector(function (d) {
+        return d.year;
+      }).left;
+
+      // 3.2B.4B.4 Define mouse moving out function
+      function mouseout() {
+        svg1.selectAll(".focus-circle").data(data).attr("stroke", "none");
+        svg1.selectAll(".focus-text").data(data).attr("fill", "none");
+      }
+
+      // 3.2B.4B.5 Define mouse moving function
+      function mousemove() {
+        // get the coordinate we need
+        let x0 = yearScale.invert(d3.mouse(this)[0]);
+        let i = bisect(groupedData[0].values, x0, 1);
+        selectedData = groupedData.map((item) => item.values[i]);
+
+        // 3.2B.4B.5.1 Update focus circle
+        svg1
+          .selectAll(".focus-circle")
+          .data(selectedData)
+          .attr("cx", function (d) {
+            return yearScale(d.year);
+          })
+          .attr("cy", function (d) {
+            if (d.rate < 3) return maleScale(d.rate);
+            return femaleScale(d.rate);
+          })
+          .attr("r", 6)
+          .attr("fill", "none")
+          .attr("stroke", "black")
+          .attr("stroke-width", 4);
+
+        // 3.2B.4B.5.2 Update focus text
+        svg1
+          .selectAll(".focus-text")
+          .data(selectedData)
+          .text(function (d) {
+            return "Rate: " + d.rate;
+          })
+          .attr("x", function (d) {
+            return yearScale(d.year);
+          })
+          .attr("y", function (d) {
+            if (d.gender === "Male") return maleScale(d.rate) + 30;
+            return femaleScale(d.rate) - 30;
+          })
+          .attr("fill", "black");
+      }
+
+      // 3.2B.4C.1 Add legend symbol
+      const size = 20;
+      let colScale = d3
+        .scaleOrdinal()
+        .domain(groupedData.map((item) => item.key))
+        .range(["#0013de", "#ff00a8"]);
+
+      // 3.2B.4C.2 Highlight selected line
+      const highlight = function (d) {
+        d3.selectAll(".sexes-line").style("opacity", 0.1);
+        d3.selectAll("#" + d).style("opacity", 1);
+      };
+
+      // 3.2B.4C.3 Undo highlighting
+      const noHighlight = function (d) {
+        d3.selectAll("path").style("opacity", 1);
+      };
+      svg1
+        .selectAll("legend")
+        .data(groupedData.map((item) => item.key))
+        .enter()
+        .append("rect")
+        .attr("x", function (d, i) {
+          return width / 1.7 + i * 70;
+        })
+        .attr("y", padding * 0.8)
+        .attr("width", size)
+        .attr("height", size)
+        .attr("fill", function (d) {
+          return colScale(d);
+        })
+        .on("mouseover", highlight)
+        .on("mouseleave", noHighlight);
+      svg1
+        .selectAll(".legend text")
+        .data(groupedData)
+        .enter()
+        .append("text")
+        .text(function (d) {
+          return d.key;
+        })
+        .attr("class", "legend text")
+        .attr("text-anchor", "start")
+        .attr("x", function (d, i) {
+          return width / 1.65 + i * 70;
+        })
+        .attr("y", padding * 0.95)
+        .attr("font-size", 14)
+        .attr("fill", "black");
+
+      // 3.2B.4D.1 Define play button function
+      d3.selectAll("#play-btn-2").on("click", function () {
+        function tweenDash() {
+          const l = this.getTotalLength(),
+            i = d3.interpolateString("0," + l, l + "," + l);
+          return function (t) {
+            return i(t);
+          };
+        }
+
+        // 3.2B.4D.2 Define play button function
+        function transition(path) {
+          path
+            .transition()
+            .duration(5500)
+            .attrTween("stroke-dasharray", tweenDash);
+        }
+
+        maleChart.call(transition);
+        femaleChart.call(transition);
+      });
+
+      // 3.2B.5 Add data label
+      // position .attr("text-anchor", ".start mid.dle end.")
+      // normal scale return scale(attr1)
+      // ordinal scale return scale(i) + scale.bandwidth()/1.5
+      // time scale return formatTime(d["attr5"])
+      let formatTime = d3.timeFormat("%b %e");
+      svg
+        .selectAll(".attr1")
+        .data(currentData)
+        .enter()
+        .append("text")
+        .text(function (d) {
+          return d["attr1"];
+        })
+        .attr("class", "attr1")
+        .attr("text-anchor", "start")
+        .attr("x", function (d, i) {
+          return xScale(d["attr1"]) + p * 1.1;
+        })
+        .attr("y", function (d, i) {
+          return yScale(i) + yScale.bandwidth() / 1.4;
+        })
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 12)
+        .attr("fill", "black");
+
+      // 3.2B.6 Add axis
+      // position bottom/top/left/right
+      // class name x axis, y axis
+      // xScale .attr("transform", "translate(0," + (h - p) + ")")
+      // yScale .attr("transform", "translate(" + p + "," + (h - p) + ")")
+      // ticks .tickValues([0, 100, 250, 600]);
+      // formatted tick .tickFormat(d3.format(".1%"))
+      let axis = d3.axisBottom(lScale).ticks(5);
+      svg
+        .append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(" + p + "," + (h - p) + ")")
+        .call(axis);
+      // position .attr("text-anchor", ".start mid.dle end.")
+      // xAxis x: w/2, y: h - p * 0.7
+      // yAxis x: -h/2, y: p/2
+      // yAxis .attr("transform", "rotate(-90)");
+      svg
+        .append("text")
+        .text("attr1 name")
+        .attr("class", "axis-label")
+        .attr("text-anchor", "middle")
+        .attr("x", w / 2)
+        .attr("y", h - p * 0.7)
+        .attr("font-size", 20);
+
+      // 3.2B.7A.1 Configure buttons (ADD/REMOVE)
+      // pop() removes last, shift() removes first
+      d3.selectAll("button").on("click", function () {
+        let id = d3.select(this).attr("id");
+        if (id == "add") {
+          if (currentData.length < data.length) {
+            currentData.push(data[currentData.length]);
+          }
+        } else {
+          if (
+            currentData.length > data.length &&
+            currentData.length < data.length
+          ) {
+            currentData.pop();
+          }
+        }
+
+        // 3.2B.7A.2 Update the scales with new domain
+        lScale.domain([
+          0,
+          d3.max(currentData, function (d) {
+            return d["attr1"];
+          }),
+        ]);
+        oScale.domain(d3.range(currentData.length));
+
+        // 3.2B.7A.3 Update x-axis/ y-axis
+        svg.select(".x.axis").transition().duration(1000).call(xAxis);
+
+        // 3.2B.7A.4 Add new rectangle element
+        // before merge() is starting point
+        let bars = svg.selectAll("rect").data(currentData);
+        bars
+          .enter()
+          .append("rect")
+          .attr("x", w)
+          .attr("y", function (d, i) {
+            return yScale(i);
+          })
+          .attr("width", function (d) {
+            return xScale(d["attr1"]);
+          })
+          .attr("height", yScale.bandwidth())
+          .attr("fill", function (d) {
+            return "rgb(0, " + d["attr1"] + ",0)";
+          })
+          .merge(bars)
+          .transition()
+          .duration(500)
+          .attr("x", p)
+          .attr("y", function (d, i) {
+            return yScale(i);
+          })
+          .attr("width", function (d) {
+            return xScale(d["attr1"]);
+          })
+          .attr("height", yScale.bandwidth());
+
+        //3.2B.7A.5 Exit outdated rect elements
+        // ordinal scale .attr("x", -oScale.bandwidth())
+        bars.exit().transition().duration(500).attr("x", w).remove();
+
+        // 3.2B.7A.6 Add new label
+        let label1 = svg.selectAll(".attr1").data(currentData);
+        // before merge() is starting point
+        label1
+          .enter()
+          .append("text")
+          .text(function (d) {
+            return d["attr1"];
+          })
+          .attr("class", "attr1")
+          .attr("text-anchor", "start")
+          .attr("x", w)
+          .attr("y", function (d, i) {
+            return yScale(i) + yScale.bandwidth() / 1.8;
+          })
+          .attr("font-size", 12)
+          .attr("fill", "black")
+          .merge(label1)
+          .transition()
+          .duration(500)
+          .attr("class", "attr1")
+          .attr("x", function (d, i) {
+            return xScale(d["attr1"]) + p * 1.1;
+          })
+          .attr("y", function (d, i) {
+            return yScale(i) + yScale.bandwidth() / 1.8;
+          });
+
+        // 3.2B.7A.7 Exit outdated labels
+        label1.exit().transition().duration(500).attr("x", w).remove();
+      });
+
+      // 3.2B.7B.1 Configure sort selection (UPDATE)
+      // copy attr1 for String value, attr2 for Integer/Float value
+      d3.select("#sort-select").on("change", function () {
+        let criterion = d3.select(this).property("value");
+        currentData = currentData.sort(function (a, b) {
+          switch (criterion) {
+            case "attr1":
+              if (a[criterion] < b[criterion]) return -1;
+              else if (a[criterion] > b[criterion]) return 1;
+              else return 0;
+            case "attr2":
+              return b["attr2"] - a["attr2"];
+          }
+        });
+
+        // 3.2B.7B.2 Update the scales with new domain
+        lScale.domain([
+          0,
+          d3.max(currentData, function (d) {
+            return d["attr1"];
+          }),
+        ]);
+        oScale.domain(d3.range(currentData.length));
+
+        // 3.2B.7B.3 Update x-axis/ y-axis
+        svg.select(".x.axis").transition().duration(1000).call(xAxis);
+
+        // 3.2B.7B.4 Update bar elements with ONLY attributes needed to update
+        // transition/duration are MANDATORY, delay/duration are OPTIONAL
+        svg
+          .selectAll("rect")
+          .data(currentData)
+          .transition()
+          .delay(function (d, i) {
+            return (i / dataset.length) * 1000;
+          })
+          .duration(500)
+          .ease(d3.easeLinear)
+          .attr("y", function (d, i) {
+            return yScale(i);
+          })
+          .attr("width", function (d) {
+            return xScale(d["attr2"]);
+          });
+
+        // 3.2B.7B.5 Update labels with ONLY attributes needed to update
+        // transition/duration are MANDATORY, delay/duration are OPTIONAL
+        svg
+          .selectAll(".attr1")
+          .data(currentData)
+          .transition()
+          .delay(function (d, i) {
+            return (i / dataset.length) * 1000;
+          })
+          .duration(500)
+          .ease(d3.easeLinear)
+          .text(function (d) {
+            return d["attr1"];
+          })
+          .attr("x", function (d, i) {
+            return xScale(d["attr1"]) + p * 1.1;
+          })
+          .attr("y", function (d, i) {
+            return yScale(i) + yScale.bandwidth() / 1.8;
+          });
+      });
+    }
+  });
+}
