@@ -65,14 +65,14 @@ function draw() {
     .data(dataset)
     .enter()
     .append("rect")
-    .attr("x", yAxisPadding)
-    .attr("y", function (d, i) {
+    .attr("y", yAxisPadding)
+    .attr("x", function (d, i) {
       return (i * (height - xAxisPadding)) / numOfBars;
     })
-    .attr("width", function (d) {
+    .attr("height", function (d) {
       return xScale(d.GRDP);
     })
-    .attr("height", yScale.bandwidth())
+    .attr("width", yScale.bandwidth())
     .attr("fill", "blue");
 
   svg
@@ -116,8 +116,8 @@ function draw() {
   svg
     .append("text")
     .attr("text-anchor", "middle")
-    .attr("x", width / 2)
-    .attr("y", height)
+    .attr("x", width)
+    .attr("y", height / 2)
     .text("GRDP-VND")
     .attr("font-family", "times new roman")
     .attr("font-size", "15px");

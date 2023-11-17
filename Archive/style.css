@@ -1,0 +1,13 @@
+h3 {
+    color: blue;
+}
+h4.name, h4.id, h4.title {
+    font-weight: bold;
+}
+h4.title {
+    font-style: italic;
+    font-weight: normal;
+}
+p {
+    font-weight: normal;
+}

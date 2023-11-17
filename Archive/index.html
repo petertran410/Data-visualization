@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Lab 5</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+
+</head>
+<h3>Nguyen Hoang Ly</h3>
+<h4 class="name">ITITIU20249</h4>
+<h4 class="id">Data science and data visualization</h4>
+<h4 class="title">Lab 5 – D3.js – Interaction</h4>
+<p>
+  This is all my own work. I did not copy the code from any other source.
+</p>
+<div id="histogram" class="histogram"></div>
+
+<script>
+  function rowConverter(d) {
+    return {
+      cases: parseFloat(d["5/4/20"]),
+      province: d["Province/State"],
+      country: d["Country/Region"],
+      latitude: parseFloat(d["Lat"]),
+      longitude: parseFloat(d["Long"])
+    };
+  }
+
+  d3.csv(
+    "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv",
+    rowConverter
+  )
+    .then(originalData => {
+      console.log(originalData);
+      your_draw_chart_function(originalData);
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+  // FUNCTION HERE
+  function your_draw_chart_function(data) {
+
+    var Tooltip = d3.select("#histogram")
+      .append("div")
+      .style("opacity", 0)
+      .attr("class", "tooltip")
+      .style("background-color", "white")
+      .style("border", "solid")
+      .style("border-width", "2px")
+      .style("border-radius", "5px")
+      .style("padding", "5px")
+      .style("position", "absolute")
+
+    // Three function that change the tooltip when user hover / move / leave a cell
+    var mouseover = function (event, d) {
+      Tooltip
+        .style("opacity", 1)
+      d3.select(this)
+        .style("stroke", "black")
+        .attr("opacity",d => (d.cases / 100000)+0.7 )
+        .attr("r", 10)
+    }
+    var mousemove = function (event, d) {
+      Tooltip
+        .style("top", (event.pageY + 10) + "px")
+        .style("left", (event.pageX + 10) + "px")
+        .html("Country: " + (d.province == '' ? d.country : d.country + "<br> Province: " + d.province) + "<br>" +
+          "Latitude: " + d.latitude + "<br>" +
+          "Longitude: " + d.longitude + "<br>" +
+          "Confirmed Cases: " + d.cases
+        )
+    }
+    var mouseleave = function (event, d) {
+      Tooltip
+        .style("opacity", 0)
+        .style("top", (event.pageY + 200) + "px")
+        .style("left", (event.pageX + 200) + "px")
+      d3.select(this)
+        .attr("opacity", d => (d.cases / 100000)+0.07)
+        .style("stroke", "none")
+        .attr("r", 5)
+    }
+    
+    // create svg
+    const svg = d3.select("#histogram")
+      .append("svg")
+      .attr("width", 1000)
+      .attr("height", 700)
+      .attr("padding", 200)
+
+
+    // define x y scale
+    var xScale = d3
+      .scaleLinear()
+      .domain([-200, 200])
+      .range([10, svg.attr("width") - 100]);
+    var yScale = d3
+      .scaleLinear()
+      .domain([d3.min(data, d => d["latitude"]), d3.max(data, d => d["latitude"])])
+      .range([svg.attr("height") - 30, 0]);
+
+    var xAxis = d3.axisBottom(xScale)
+    var yAxis = d3.axisLeft(yScale)
+    
+    // define color scale
+    // var colorScale = d3.scaleSequential()
+    //   .domain([0, 100000])
+    //   .interpolator(d3.interpolateOranges);
+
+
+      // Create x and y bars
+    svg
+      .append("g")
+      .attr("class", "x-axis")
+      .attr("transform", "translate(0," + (svg.attr("height")/2-16) + ")")
+      .call(xAxis);
+    svg
+      .append("g")
+      .attr("class", "y-axis")
+      .attr("transform", "translate("+(svg.attr("width")/2-45) +",0)")
+      .call(yAxis);
+
+
+      // Create Circles
+    svg.selectAll("circle")
+      .data(data)
+      .enter()
+      .append("circle")
+      .attr("fill", "red")
+      .attr("cx", d => xScale(d.longitude))
+      .attr("cy", d => yScale(d.latitude))
+      .attr("r", 5)
+      .attr("opacity", d => (d.cases / 100000)+0.07)
+      .on("mouseover", mouseover)
+      .on("mousemove", mousemove)
+      .on("mouseleave", mouseleave);
+  }
+
+</script>
+</body>
+
+</html>
