@@ -1,3 +1,21 @@
+1.
+a. 
+- its data is organss, indicators and methylation
+- types of data: 
++ x-axis is nominal
++ y-axis is ratio
++ z-axis is nominal
+
+b. 
+- Mark: 3D
+- Channel: 
++ Color
++ Size
++ Volume
+
+
+
+
 // Step 1: Define basic constraints
 const w = 500;
 const h = 500;
