@@ -21,14 +21,14 @@ let svg = d3
 d3.csv(
   "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
 ).then(function (data) {
-  let date = "3/20/20";
+  // let date = "3/20/20";
   let dataByDate = data.map(function (d) {
     return {
       country: d["Country/Region"],
       lat: parseFloat(d["Lat"]),
       long: parseFloat( d["Long"]),
-      date: date,
-      confirmed: parseInt(d[date]),
+      date: parseInt(d["3/20/22"]),
+      // confirmed: parseInt(d[date]),
     };
   });
   console.log(dataByDate);
