@@ -9,7 +9,7 @@
   </head>
 
   <body>
-    <h3>Trần Ngọc Nhân</h3>
+    <!-- <h3>Trần Ngọc Nhân</h3>
     <h4>ITITIU20264</h4>
     <h4>Data Science and Data Virtualization</h4>
     <p>
@@ -23,8 +23,30 @@
       <option selected value="type">Type</option>
       <option value="name">Name</option>
       <option value="grdp">GRDP-VND</option>
-    </select>
+    </select> -->
 
-    <script src="./index.js"></script>
+    <!-- <script src="./index.js"></script> -->
+
+    <script>
+      d3.csv(
+        "/home/tranngocnhan/Ngoc_Nhan/data_visual_project/src/Density/TongDanSo.csv"
+      )
+        .then(function (data) {
+          if (Array.isArray(data)) {
+            let dataByYear = data.map(function (d) {
+              return {
+                ProvinceState: d["Province/State"],
+                Country: d["Country/Region"],
+              };
+            });
+            console.log(dataByYear);
+          } else {
+            console.error("Data is not an array:", data);
+          }
+        })
+        .catch(function (error) {
+          console.error("Error loading CSV:", error);
+        });
+    </script>
   </body>
 </html>
