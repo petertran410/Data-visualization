@@ -26,7 +26,7 @@ d.
 2.
 I see that there are 6 groupIDs and 3 majors and GPD is not stable so:
 - GroupID: There will be 6 number represent for 6 groupID
-
+- GPA: color change
 
 file index.html:
 
